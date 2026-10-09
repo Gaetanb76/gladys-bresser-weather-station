@@ -6,8 +6,8 @@
     "en": "Outdoor and indoor readings from a Bresser 5-in-1 WiFi station (Ecowitt), plus a moon phase widget.",
     "fr": "Donnees station Bresser 5-en-1 WiFi (protocole Ecowitt) dans Gladys, avec widget phases de la lune."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.0",
+  "version": "1.0.1",
+  "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.1",
   "gladys_version": ">=5.1.0",
   "categories": [
     "environment"
@@ -18,7 +18,7 @@
   "containers": [
     {
       "name": "ecowitt-receiver",
-      "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.0",
+      "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.1",
       "command": [
         "node",
         "src/receiver.js"
