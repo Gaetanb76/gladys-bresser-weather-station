@@ -3,20 +3,26 @@
   "type": "device",
   "name": "Bresser Weather Station",
   "description": {
-    "en": "Outdoor and indoor readings from your Bresser 5-in-1 WiFi weather station over the Ecowitt protocol, plus a moon phase widget.",
-    "fr": "Donnees interieures et exterieures de votre station meteo Bresser 5-en-1 WiFi via le protocole Ecowitt, avec un widget des phases de la lune."
+    "en": "Outdoor and indoor readings from a Bresser 5-in-1 WiFi station (Ecowitt), plus a moon phase widget.",
+    "fr": "Donnees station Bresser 5-en-1 WiFi (protocole Ecowitt) dans Gladys, avec widget phases de la lune."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gbrissot/gladys-bresser-weather-station:1.0.0",
+  "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/gbrissot/gladys-bresser-weather-station/main/cover.jpg",
-  "categories": ["environment"],
-  "transports": ["local"],
+  "categories": [
+    "environment"
+  ],
+  "transports": [
+    "local"
+  ],
   "containers": [
     {
       "name": "ecowitt-receiver",
-      "docker_image": "ghcr.io/gbrissot/gladys-bresser-weather-station:1.0.0",
-      "command": ["node", "src/receiver.js"],
+      "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.0",
+      "command": [
+        "node",
+        "src/receiver.js"
+      ],
       "start": "auto",
       "read_only": true,
       "memory_mb": 128,
@@ -26,7 +32,10 @@
           "container_port": 8080,
           "protocol": "tcp",
           "name": "ecowitt",
-          "label": { "en": "Ecowitt endpoint", "fr": "Point d'entree Ecowitt" },
+          "label": {
+            "en": "Ecowitt endpoint",
+            "fr": "Point d'entree Ecowitt"
+          },
           "browsable": false
         }
       ]
@@ -35,7 +44,10 @@
   "widgets": [
     {
       "key": "moon_phase",
-      "label": { "en": "Moon phase", "fr": "Phase de la lune" },
+      "label": {
+        "en": "Moon phase",
+        "fr": "Phase de la lune"
+      },
       "description": {
         "en": "Current moon phase, illumination, and a 30-day illumination chart.",
         "fr": "Phase de la lune actuelle, illumination, et un graphique sur 30 jours."
@@ -49,19 +61,31 @@
     {
       "key": "setup_info",
       "type": "section",
-      "label": { "en": "Connect your weather station", "fr": "Connectez votre station meteo" },
+      "label": {
+        "en": "Connect your weather station",
+        "fr": "Connectez votre station meteo"
+      },
       "description": {
         "en": "In the WSLink / WSView Plus app, open Weather Services > Customized, pick protocol 'Ecowitt', and set Server Hostname to {{gladys_host}}, Port to {{port:ecowitt}}, Path to /data/report, and Upload Interval to 60 seconds.",
         "fr": "Dans l'application WSLink / WSView Plus, allez dans Services meteo > Personnalise (Customized), choisissez le protocole 'Ecowitt', puis renseignez Server Hostname avec {{gladys_host}}, Port avec {{port:ecowitt}}, Path avec /data/report, et un intervalle d'envoi (Upload Interval) de 60 secondes."
       },
       "links": [
-        { "url": "https://github.com/gbrissot/gladys-bresser-weather-station", "label": { "en": "Integration source", "fr": "Code source de l'integration" } }
+        {
+          "url": "https://github.com/Gaetanb76/gladys-bresser-weather-station",
+          "label": {
+            "en": "Integration source",
+            "fr": "Code source de l'integration"
+          }
+        }
       ]
     },
     {
       "key": "battery_as_binary",
       "type": "boolean",
-      "label": { "en": "Report battery as low/ok (binary)", "fr": "Remonter la batterie en bas/ok (binaire)" },
+      "label": {
+        "en": "Report battery as low/ok (binary)",
+        "fr": "Remonter la batterie en bas/ok (binaire)"
+      },
       "description": {
         "en": "The 5-in-1 sensor only ever reports a low-battery flag, not a percentage. Leave this on.",
         "fr": "Le capteur 5-en-1 ne renvoie qu'un indicateur bas/ok, jamais un pourcentage. Laissez cette option activee."
