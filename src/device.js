@@ -1,152 +1,51 @@
 // Shared device/feature declarations, used by BOTH processes:
-//   - src/index.js      (main container)    -> publishes discovery + widget
-//   - src/receiver.js   (companion container) -> publishes the live states
+//   - src/index.js     (main container)      -> publishes discovery + widget
+//   - src/receiver.js  (companion container) -> publishes the live states
 //
-// gladys.externalIds(type, platformId) is a pure, local computation (no
-// network round trip), so as long as both processes call it with the same
-// two arguments they end up with byte-identical external_id strings. That
-// is what lets the companion container publish states for features it did
-// not itself declare.
+// gladys.externalIds(type, platformId) is a pure local computation, so both
+// processes compute byte-identical external_id strings from the same two
+// arguments. That is what lets the companion publish states for features it
+// did not declare itself.
 //
-// NOTE: DEVICE_FEATURE_CATEGORIES / DEVICE_FEATURE_TYPES / DEVICE_FEATURE_UNITS
-// are re-exported by @gladysassistant/integration-sdk and mirror Gladys'
-// core enums. The exact constant names below (TEMPERATURE, HUMIDITY, RAIN,
-// WIND_SPEED, WIND_DIRECTION, PRESSURE, BATTERY) match the public Gladys
-// device-feature catalog at the time this was written. If `npx
-// github:GladysAssistant/integration-store .` complains about an unknown
-// type/category, run:
-//   node -e "console.log(require('@gladysassistant/integration-sdk').DEVICE_FEATURE_TYPES)"
-// and adjust the constant names here to match.
+// Category / type / unit names were checked against
+// @gladysassistant/integration-sdk 0.14.0 (DEVICE_FEATURE_CATEGORIES,
+// DEVICE_FEATURE_TYPES, DEVICE_FEATURE_UNITS). Gladys validates the
+// category/type/unit combination when the user clicks "create" in the
+// Discovery tab; names in the SDK are plain strings (not multilingual).
 
-export const STATION_PLATFORM_ID = "bresser-5in1";
+export const STATION_PLATFORM_ID = "bresser-7002580";
 export const DEVICE_TYPE = "weather_station";
 
-export function buildFeatureDefinitions(CATEGORIES, TYPES, UNITS) {
+export function buildFeatureDefinitions(C, T, U) {
+  const decimal = T.SENSOR.DECIMAL;
   return [
-    {
-      key: "temp_out",
-      name: { en: "Outdoor temperature", fr: "Temperature exterieure" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.TEMPERATURE,
-      unit: UNITS.CELSIUS,
-      min: -40,
-      max: 60,
-    },
-    {
-      key: "hum_out",
-      name: { en: "Outdoor humidity", fr: "Humidite exterieure" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.HUMIDITY,
-      unit: UNITS.PERCENT,
-      min: 0,
-      max: 100,
-    },
-    {
-      key: "temp_in",
-      name: { en: "Indoor temperature", fr: "Temperature interieure" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.TEMPERATURE,
-      unit: UNITS.CELSIUS,
-      min: -20,
-      max: 60,
-    },
-    {
-      key: "hum_in",
-      name: { en: "Indoor humidity", fr: "Humidite interieure" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.HUMIDITY,
-      unit: UNITS.PERCENT,
-      min: 0,
-      max: 100,
-    },
-    {
-      key: "pressure",
-      name: { en: "Atmospheric pressure", fr: "Pression atmospherique" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.PRESSURE,
-      unit: UNITS.HPA,
-      min: 900,
-      max: 1100,
-    },
-    {
-      key: "wind_speed",
-      name: { en: "Wind speed", fr: "Vitesse du vent" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.WIND_SPEED,
-      unit: UNITS.KMH,
-      min: 0,
-      max: 250,
-    },
-    {
-      key: "wind_gust",
-      name: { en: "Wind gust", fr: "Rafale de vent" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.WIND_SPEED,
-      unit: UNITS.KMH,
-      min: 0,
-      max: 250,
-    },
-    {
-      key: "wind_direction",
-      name: { en: "Wind direction", fr: "Direction du vent" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.WIND_DIRECTION,
-      unit: UNITS.DEGREE,
-      min: 0,
-      max: 360,
-    },
-    {
-      key: "rain_rate",
-      name: { en: "Rain rate", fr: "Intensite de pluie" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.RAIN,
-      unit: UNITS.MM,
-      min: 0,
-      max: 500,
-    },
-    {
-      key: "rain_daily",
-      name: { en: "Daily rainfall", fr: "Pluie cumulee du jour" },
-      category: CATEGORIES.SENSOR,
-      type: TYPES.SENSOR.RAIN,
-      unit: UNITS.MM,
-      min: 0,
-      max: 1000,
-      keep_history: true,
-    },
-    {
-      key: "battery_low",
-      name: { en: "Outdoor sensor battery", fr: "Batterie capteur exterieur" },
-      category: CATEGORIES.BATTERY,
-      type: TYPES.BATTERY.BINARY,
-      min: 0,
-      max: 1,
-    },
+    { key: "temp_out", name: "Température extérieure", category: C.TEMPERATURE_SENSOR, type: decimal, unit: U.CELSIUS, min: -60, max: 70 },
+    { key: "hum_out", name: "Humidité extérieure", category: C.HUMIDITY_SENSOR, type: decimal, unit: U.PERCENT, min: 0, max: 100 },
+    { key: "dew_point", name: "Point de rosée", category: C.TEMPERATURE_SENSOR, type: decimal, unit: U.CELSIUS, min: -80, max: 60 },
+    { key: "temp_in", name: "Température intérieure", category: C.TEMPERATURE_SENSOR, type: decimal, unit: U.CELSIUS, min: -30, max: 70 },
+    { key: "hum_in", name: "Humidité intérieure", category: C.HUMIDITY_SENSOR, type: decimal, unit: U.PERCENT, min: 0, max: 100 },
+    { key: "pressure", name: "Pression atmosphérique", category: C.PRESSURE_SENSOR, type: decimal, unit: U.HECTO_PASCAL, min: 850, max: 1100 },
+    { key: "wind_speed", name: "Vitesse du vent", category: C.SPEED_SENSOR, type: decimal, unit: U.KILOMETER_PER_HOUR, min: 0, max: 300 },
+    { key: "wind_gust", name: "Rafale de vent", category: C.SPEED_SENSOR, type: decimal, unit: U.KILOMETER_PER_HOUR, min: 0, max: 300 },
+    { key: "wind_direction", name: "Direction du vent", category: C.ANGLE_SENSOR, type: decimal, unit: U.DEGREE, min: 0, max: 360 },
+    { key: "rain_rate", name: "Pluie (dernière heure)", category: C.PRECIPITATION_SENSOR, type: decimal, unit: U.MILLIMETER_PER_HOUR, min: 0, max: 500 },
+    { key: "rain_daily", name: "Pluie cumulée du jour", category: C.RAIN_SENSOR, type: decimal, unit: U.MM, min: 0, max: 2000 },
   ];
 }
 
-export function buildDiscoveredDevice(gladys, CATEGORIES, TYPES, UNITS) {
+export function buildDiscoveredDevice(gladys, C, T, U) {
   const ids = gladys.externalIds(DEVICE_TYPE, STATION_PLATFORM_ID);
-  const definitions = buildFeatureDefinitions(CATEGORIES, TYPES, UNITS);
-
-  return {
-    device: {
-      name: "Station meteo Bresser",
-      external_id: ids.device,
-      features: definitions.map((def) => ({
-        name: def.name,
-        external_id: ids.feature(def.key),
-        category: def.category,
-        type: def.type,
-        unit: def.unit,
-        min: def.min,
-        max: def.max,
-        read_only: true,
-        has_feedback: false,
-        keep_history: def.keep_history ?? true,
-      })),
-    },
-    ids,
-    definitions,
-  };
+  const features = buildFeatureDefinitions(C, T, U).map((def) => ({
+    name: def.name,
+    external_id: ids.feature(def.key),
+    category: def.category,
+    type: def.type,
+    unit: def.unit,
+    min: def.min,
+    max: def.max,
+    read_only: true,
+    has_feedback: false,
+    keep_history: true,
+  }));
+  return { device: { name: "Station météo Bresser", external_id: ids.device, features }, ids };
 }

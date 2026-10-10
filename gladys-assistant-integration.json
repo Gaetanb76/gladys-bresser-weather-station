@@ -3,8 +3,8 @@
   "type": "device",
   "name": "Bresser Weather Station",
   "description": {
-    "en": "Outdoor and indoor readings from a Bresser 5-in-1 WiFi station (Ecowitt), plus a moon phase widget.",
-    "fr": "Donnees station Bresser 5-en-1 WiFi (protocole Ecowitt) dans Gladys, avec widget phases de la lune."
+    "en": "Bresser 7002580 WiFi station (outdoor, indoor, wind, rain, pressure) via the Wunderground protocol,",
+    "fr": "Station Bresser 7002580 WiFi (ext., int., vent, pluie, pression) via le protocole Wunderground, avec widget lune."
   },
   "version": "1.0.2",
   "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.2",
@@ -17,7 +17,7 @@
   ],
   "containers": [
     {
-      "name": "ecowitt-receiver",
+      "name": "wunderground-receiver",
       "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.2",
       "command": [
         "node",
@@ -31,10 +31,10 @@
         {
           "container_port": 8080,
           "protocol": "tcp",
-          "name": "ecowitt",
+          "name": "wunderground",
           "label": {
-            "en": "Ecowitt endpoint",
-            "fr": "Point d'entree Ecowitt"
+            "en": "Wunderground endpoint",
+            "fr": "Point dentree Wunderground"
           },
           "browsable": false
         }
@@ -66,31 +66,9 @@
         "fr": "Connectez votre station meteo"
       },
       "description": {
-        "en": "In the WSLink / WSView Plus app, open Weather Services > Customized, pick protocol 'Ecowitt', and set Server Hostname to {{gladys_host}}, Port to {{port:ecowitt}}, Path to /data/report, and Upload Interval to 60 seconds.",
-        "fr": "Dans l'application WSLink / WSView Plus, allez dans Services meteo > Personnalise (Customized), choisissez le protocole 'Ecowitt', puis renseignez Server Hostname avec {{gladys_host}}, Port avec {{port:ecowitt}}, Path avec /data/report, et un intervalle d'envoi (Upload Interval) de 60 secondes."
-      },
-      "links": [
-        {
-          "url": "https://github.com/Gaetanb76/gladys-bresser-weather-station",
-          "label": {
-            "en": "Integration source",
-            "fr": "Code source de l'integration"
-          }
-        }
-      ]
-    },
-    {
-      "key": "battery_as_binary",
-      "type": "boolean",
-      "label": {
-        "en": "Report battery as low/ok (binary)",
-        "fr": "Remonter la batterie en bas/ok (binaire)"
-      },
-      "description": {
-        "en": "The 5-in-1 sensor only ever reports a low-battery flag, not a percentage. Leave this on.",
-        "fr": "Le capteur 5-en-1 ne renvoie qu'un indicateur bas/ok, jamais un pourcentage. Laissez cette option activee."
-      },
-      "default": true
+        "en": "Set up the network relay (see relay/ in the repository) and send a copy of the station uploads to http://{{gladys_host}}:{{port:wunderground}}/weatherstation/updateweatherstation.php",
+        "fr": "Installez le relais reseau (dossier relay/ du depot) et envoyez une copie des envois de la station vers http://{{gladys_host}}:{{port:wunderground}}/weatherstation/updateweatherstation.php"
+      }
     }
   ]
 }

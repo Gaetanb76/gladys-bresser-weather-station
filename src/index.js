@@ -2,7 +2,7 @@
 //
 // Responsibilities:
 //  1. Talk to Gladys over the SDK (discovery, config, the moon phase widget).
-//  2. Start the "ecowitt-receiver" companion container (declared in
+//  2. Start the "wunderground-receiver" companion container (declared in
 //     gladys-assistant-integration.json), forwarding this container's own
 //     Gladys credentials to it as env vars so it can open its own SDK
 //     connection and publish weather states directly - no networking
@@ -71,7 +71,7 @@ gladys.onWidgetGet("moon_phase", async ({ language }) => {
 
 async function startReceiver() {
   try {
-    await gladys.startContainer("ecowitt-receiver", {
+    await gladys.startContainer("wunderground-receiver", {
       env: {
         GLADYS_HOST_API_URL: process.env.GLADYS_HOST_API_URL,
         GLADYS_INTEGRATION_TOKEN: process.env.GLADYS_INTEGRATION_TOKEN,
@@ -79,9 +79,9 @@ async function startReceiver() {
         TZ: process.env.TZ,
       },
     });
-    logger.info("ecowitt-receiver container started");
+    logger.info("wunderground-receiver container started");
   } catch (err) {
-    logger.error("Could not start ecowitt-receiver container", err);
+    logger.error("Could not start wunderground-receiver container", err);
   }
 }
 

@@ -1,45 +1,32 @@
 # Bresser Weather Station for Gladys Assistant
 
-This integration brings data from your **Bresser WSC Wi-Fi 5-in-1** weather station (or any other product built on the same Fine Offset hardware: Ecowitt, Froggit, Ambient Weather...) straight into Gladys Assistant, with no cloud service in between.
+Brings your **Bresser 7002580 WiFi colour station (5-in-1)** into Gladys Assistant, plus a moon-phase widget.
 
-## What it does
+## What it provides
 
-- Outdoor temperature and humidity
-- Indoor temperature and humidity (console)
+- Outdoor temperature, humidity, dew point
+- Indoor temperature and humidity
 - Atmospheric pressure
 - Wind speed, gust and direction
-- Rainfall (rate and daily total)
-- Outdoor 5-in-1 sensor battery level
-- A dashboard widget showing the current moon phase and a 30-day illumination chart (pure local astronomical calculation, no data from the station is needed for this)
+- Rain (last hour, daily total)
+- Dashboard widget: moon phase + 30-day illumination chart (local calculation)
+
+The station's upload protocol carries **no battery information**, so no battery feature is provided.
 
 ## How it works
 
-The integration starts a **companion container** ("ecowitt-receiver") exposed on a port Gladys allocates automatically. That is the port your station talks to directly, over HTTP, using the Ecowitt protocol, on your local network - no data ever goes through a cloud service.
-
-## Requirements
-
-- Gladys Assistant 5.1.0 or later.
-- A Bresser (or Fine Offset-compatible) station with the **WSLink** or **WSView Plus** app, able to reach your Gladys instance on the local network.
+The console can only upload to Weather Underground (HTTP) or Weathercloud. This integration runs a companion container that speaks the Weather Underground upload protocol. A small relay on your network (e.g. a Raspberry Pi with dnsmasq + nginx, see the `relay/` folder of the repository) redirects `rtupdate.wunderground.com` and sends a copy of each upload to that container. Your Wunderground page keeps working.
 
 ## Setup
 
-1. Install the integration from the Gladys catalog.
-2. Open the **Configuration** tab: the "Connect your weather station" section shows the exact address and port to use (Gladys computes them for your installation).
-3. In the WSLink / WSView Plus app, go to **Weather Services > Customized**:
-   - Protocol Type: **Ecowitt**
-   - Server IP / Hostname: the address shown in Gladys
-   - Port: the port shown in Gladys
-   - Path: `/data/report`
-   - Upload Interval: 60 seconds
-4. Save on the station. In Gladys, open the integration's **Discovery** tab and click "Create" on the "Bresser Weather Station" device.
-5. Add the **Moon phase** widget from the dashboard editor (under the "Bresser Weather Station" section).
+1. Install the integration in Gladys; note the address/port shown in Configuration.
+2. Set up the relay (`relay/README.md`).
+3. Make sure the station is configured for Weather Underground (Pro Weather Link page, `http://192.168.1.1` when connected to the `PWS-xxxxxx` WiFi).
+4. Open the Discovery tab and create the "Station météo Bresser" device.
+5. Add the **Moon phase** widget to a dashboard.
 
 ## Troubleshooting
 
-- **No data coming in**: make sure the station and the machine running Gladys are on the same local network (or that the port is correctly forwarded if your Gladys install sits behind a router), and that the upload protocol configured on the station is Ecowitt, not Wunderground.
-- **Battery always shows "OK"**: the 5-in-1 sensor only reports a low-battery flag below a certain threshold, never a continuous percentage.
-- **Moon phase widget missing**: it requires Gladys 5.1.0 or later.
-
-## Support
-
-Open an issue on the integration's GitHub repository, or ask on the Gladys Assistant community forum.
+- No data: check the relay (`curl` test in `relay/README.md`) and that the Pi is the DNS server of the station.
+- Pressure is the station's value converted from inHg (absolute/relative depends on the station's setting).
+- "Rain (last hour)" is the `rainin` value sent by the station.
