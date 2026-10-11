@@ -1,53 +1,62 @@
 // Main container entrypoint.
 //
-// Responsibilities:
-//  1. Talk to Gladys over the SDK (discovery, config, the moon phase widget).
-//  2. Start the "wu-receiver" companion container (declared in
-//     gladys-assistant-integration.json), forwarding this container's own
-//     Gladys credentials to it as env vars so it can open its own SDK
-//     connection and publish weather states directly - no networking
-//     between the two containers is required.
+// Two ways to get the station's data into Gladys (setting "mode"):
 //
-// The main container never talks HTTP to the weather station itself: that
-// job belongs to the companion container, because only companion
-// containers get a host-published port the station can reach on the LAN.
+//  - "wunderground_api": this process polls the Weather Underground API with
+//    the station ID / API key from the settings. No network setup, but no
+//    indoor values.
+//  - "relay": the "wu-receiver" companion container (declared in the
+//    manifest) receives the station's own upload, relayed on the local
+//    network (see relay/). It gets this container's Gladys credentials via
+//    env so it can publish states over its own SDK connection. Companion
+//    containers are the only ones that get a host-published port.
 
 import { GladysIntegration, DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_TYPES, DEVICE_FEATURE_UNITS, logger } from "@gladysassistant/integration-sdk";
-import { buildDiscoveredDevice } from "./device.js";
+import { buildDiscoveredDevice, DEVICE_TYPE, STATION_PLATFORM_ID } from "./device.js";
 import { getMoonPhase, buildIlluminationSeries } from "./moon.js";
+import { fetchObservation } from "./wuapi.js";
+import { createChangePublisher } from "./publisher.js";
 
 const gladys = new GladysIntegration();
+const ids = gladys.externalIds(DEVICE_TYPE, STATION_PLATFORM_ID);
+const publisher = createChangePublisher({ ids, publishStates: (states) => gladys.publishStates(states) });
+
+const MODE_RELAY = "relay";
+let pollTimer = null;
+let currentSettings = { mode: "wunderground_api" };
+
+function readSettings(config) {
+  const minutes = Number(config.poll_minutes);
+  return {
+    mode: config.mode === MODE_RELAY ? MODE_RELAY : "wunderground_api",
+    stationId: String(config.wu_station_id ?? "").trim(),
+    apiKey: String(config.wu_api_key ?? "").trim(),
+    pollMinutes: Number.isFinite(minutes) ? Math.min(60, Math.max(2, minutes)) : 5,
+  };
+}
+
+// --- Discovery -----------------------------------------------------------
 
 gladys.onScanRequest(async () => {
-  const { device } = buildDiscoveredDevice(gladys, DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_TYPES, DEVICE_FEATURE_UNITS);
+  const { device } = buildDiscoveredDevice(gladys, DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_TYPES, DEVICE_FEATURE_UNITS, {
+    indoor: currentSettings.mode === MODE_RELAY,
+  });
   await gladys.publishDiscoveredDevices([device]);
 });
 
-gladys.onConfigUpdated(async (config) => {
-  logger.info("Configuration updated", config);
-});
-
-// --- Moon phase widget -----------------------------------------------
+// --- Moon phase widget ---------------------------------------------------
 // Pure calendar astronomy: no dependency on the weather station at all.
 
-gladys.onWidgetGet("moon_phase", async ({ language }) => {
+gladys.onWidgetGet("moon_phase", async () => {
   const now = new Date();
-  const { illuminationPercent, phaseName, phaseKey } = getMoonPhase(now);
+  const { illuminationPercent, phaseName } = getMoonPhase(now);
   const series = buildIlluminationSeries(now);
-  const lang = language === "fr" ? "fr" : "en";
 
   return {
     ttl_seconds: 3600,
     components: [
       { type: "text", variant: "caption", text: { en: "Moon phase", fr: "Phase de la lune" } },
-      {
-        type: "value",
-        value: illuminationPercent,
-        unit: "%",
-        label: phaseName,
-        icon: "moon",
-        color: "info",
-      },
+      { type: "value", value: illuminationPercent, unit: "%", label: phaseName, icon: "moon", color: "info" },
       {
         type: "chart",
         chart_type: "area",
@@ -67,7 +76,36 @@ gladys.onWidgetGet("moon_phase", async ({ language }) => {
   };
 });
 
-// --- Companion container lifecycle ------------------------------------
+// --- Mode: Wunderground API polling -------------------------------------
+
+async function pollOnce(settings) {
+  try {
+    const readings = await fetchObservation(settings.stationId, settings.apiKey);
+    const count = await publisher.publish(readings);
+    logger.debug(`Wunderground API: ${Object.keys(readings).length} value(s), ${count} changed`);
+  } catch (err) {
+    // err.message never contains the API key (see wuapi.js)
+    logger.error(`Wunderground API poll failed: ${err.message}`);
+  }
+}
+
+function stopPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = null;
+}
+
+function startPolling(settings) {
+  stopPolling();
+  if (!settings.stationId || !settings.apiKey) {
+    logger.warn("Wunderground API mode: station ID and API key are required in the settings");
+    return;
+  }
+  logger.info(`Polling Wunderground every ${settings.pollMinutes} min`);
+  pollOnce(settings);
+  pollTimer = setInterval(() => pollOnce(settings), settings.pollMinutes * 60_000);
+}
+
+// --- Mode: relay (companion container) ----------------------------------
 
 async function startReceiver() {
   try {
@@ -85,14 +123,32 @@ async function startReceiver() {
   }
 }
 
-gladys.handleShutdown();
+async function stopReceiver() {
+  try {
+    await gladys.stopContainer("wu-receiver");
+  } catch {
+    // not created yet / already stopped: nothing to do
+  }
+}
+
+// --- Apply settings ------------------------------------------------------
+
+async function applySettings(config) {
+  currentSettings = readSettings(config);
+  if (currentSettings.mode === MODE_RELAY) {
+    stopPolling();
+    await startReceiver();
+  } else {
+    await stopReceiver();
+    startPolling(currentSettings);
+  }
+}
+
+gladys.onConfigUpdated(async (config) => {
+  await applySettings(config);
+});
+
+gladys.handleShutdown(() => stopPolling());
 
 await gladys.connect();
-await startReceiver();
-
-// Re-assert the companion container is running after every reconnect
-// (covers the case where Gladys restarted this container but the
-// companion was separately stopped for some reason).
-gladys.on?.("connected", () => {
-  startReceiver();
-});
+await applySettings(await gladys.getConfig());

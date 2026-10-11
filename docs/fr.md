@@ -1,32 +1,58 @@
 # Station météo Bresser pour Gladys Assistant
 
-Intègre votre **station WiFi couleur Bresser 7002580 (5-en-1)** dans Gladys Assistant, avec un widget de phase de lune.
+![Station Bresser dans Gladys](../cover.jpg)
 
-## Fonctionnalités
+Intègre votre **station WiFi couleur Bresser 7002580 (5-en-1)** dans Gladys Assistant, avec un widget de phase de lune (calcul astronomique local, rien n'est demandé à la station).
 
-- Température, humidité et point de rosée extérieurs
-- Température et humidité intérieures
-- Pression atmosphérique
-- Vitesse, rafales et direction du vent
-- Pluie (dernière heure, cumul du jour)
-- Widget : phase de la lune + graphique d'illumination sur 30 jours (calcul local)
+La console ne sait pas envoyer ses données vers un serveur de votre choix : elle ne publie que vers **Weather Underground** (et Weathercloud). L'intégration propose donc deux façons de récupérer les données. Choisissez dans l'onglet **Configuration** (« Source des données »).
 
-Le protocole d'envoi de la station **ne contient pas l'état des piles** : aucune entité batterie n'est fournie.
+## Quel mode choisir ?
 
-## Fonctionnement
+| | **A. API Wunderground** (simple) | **B. Relais local** (complet) |
+|---|---|---|
+| Installation | aucune : identifiant de station + clé API gratuite | un petit relais sur votre réseau (DNS + nginx), sur la machine Gladys ou un Raspberry Pi |
+| Nécessite Internet / Wunderground | oui | non pour Gladys (l'envoi est copié en local) |
+| Délai de mise à jour | environ 5 min (réglable, minimum 2) | environ 12 s |
+| Température, humidité extérieures, point de rosée | oui | oui |
+| Pression | oui | oui |
+| Vent : vitesse, rafales, direction | oui | oui |
+| Pluie (dernière heure, cumul du jour) | oui | oui |
+| **Température et humidité intérieures** | **non** | **oui** |
+| Niveau de pile du capteur extérieur | non | non |
+| Widget phase de lune | oui | oui |
 
-La console ne sait envoyer ses données qu'à Weather Underground (HTTP) ou Weathercloud. L'intégration lance un conteneur qui comprend le protocole Weather Underground. Un petit relais sur votre réseau (par ex. un Raspberry Pi avec dnsmasq + nginx, voir le dossier `relay/` du dépôt) redirige `rtupdate.wunderground.com` et envoie une copie de chaque envoi à ce conteneur. Votre page Wunderground continue de fonctionner.
+### Ce qui n'est PAS disponible, quel que soit le mode
 
-## Mise en place
+- **Niveau de pile** : la station ne l'envoie jamais (ni à Wunderground ni à Weathercloud).
+- **Valeurs intérieures en mode A** : Weather Underground ne publie pas le capteur intérieur de la console. Le seul service qui les affiche est Weathercloud, qui n'a pas d'API de lecture : impossible de les récupérer directement, utilisez le mode B.
+- UV, rayonnement solaire : non mesurés par le capteur 5-en-1.
 
-1. Installez l'intégration dans Gladys ; notez l'adresse/le port affichés dans Configuration.
-2. Installez le relais (`relay/README.md`).
-3. Vérifiez que la station envoie vers Weather Underground (page Pro Weather Link, `http://192.168.1.1` une fois connecté au WiFi `PWS-xxxxxx`).
-4. Dans l'onglet Découverte, créez l'appareil « Station météo Bresser ».
-5. Ajoutez le widget **Phase de la lune** à un tableau de bord.
+## Mode A : API Wunderground
+
+1. Votre station doit déjà envoyer ses données à Weather Underground (page Pro Weather Link, `http://192.168.1.1` une fois connecté au WiFi `PWS-xxxxxx`).
+2. Sur wunderground.com : *Member Settings > API Keys* pour obtenir une clé gratuite (liée à votre compte et à votre station personnelle).
+3. Dans Gladys, Configuration : **Source des données = API Wunderground**, saisissez l'**identifiant de station** (ex. `ISAINT1234`) et la **clé API**.
+4. Dans l'onglet **Découverte**, créez l'appareil « Station météo Bresser » (les mesures intérieures ne sont pas proposées dans ce mode).
+
+## Mode B : Relais local
+
+La station croit parler à Weather Underground. Un relais répond à sa place, transmet chaque envoi au vrai Wunderground **et** en envoie une copie à l'intégration. Votre page Wunderground continue de fonctionner.
+
+1. Choisissez **Source des données = Relais local**. L'onglet Configuration affiche alors l'adresse à utiliser.
+2. Installez le relais (voir `relay/README.md` dans le dépôt). Deux possibilités :
+   - **sur la machine qui héberge Gladys** (Docker Compose, aucun matériel en plus, Linux avec Docker) ;
+   - sur un **Raspberry Pi** ou tout autre petit serveur Linux toujours allumé.
+3. Dans votre routeur, indiquez la machine du relais comme serveur DNS. La Livebox ne permet pas de changer son DNS : utilisez un second routeur en mode routeur derrière elle (ex. TP-Link Deco) ou réglez le DNS appareil par appareil.
+4. Dans l'onglet **Découverte**, créez l'appareil « Station météo Bresser ».
 
 ## Dépannage
 
-- Pas de données : testez le relais (`curl` dans `relay/README.md`) et vérifiez que le Pi est bien le DNS de la station.
-- La pression est la valeur de la station convertie depuis inHg.
-- « Pluie (dernière heure) » correspond à `rainin` envoyé par la station.
+- Pas de données en mode A : vérifiez l'identifiant de station et la clé API, et que votre station est en ligne sur wunderground.com. Le journal indique « refused the API key » si la clé est fausse.
+- Pas de données en mode B : testez le relais avec la commande `curl` de `relay/README.md`.
+- La pression est la valeur envoyée par la station, convertie de inHg en hPa.
+- « Pluie (dernière heure) » correspond au taux envoyé par la station (`rainin`).
+- Widget de lune absent : il nécessite Gladys 5.1.0 ou plus.
+
+## Support
+
+Ouvrez une issue sur le dépôt GitHub de l'intégration, ou posez la question sur le forum de la communauté Gladys Assistant.

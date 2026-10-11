@@ -3,8 +3,8 @@
   "type": "device",
   "name": "Bresser Weather Station",
   "description": {
-    "en": "Bresser 7002580 WiFi station (outdoor, indoor, wind, rain, pressure) via the Wunderground protocol,",
-    "fr": "Station Bresser 7002580 WiFi (ext., int., vent, pluie, pression) et widget phases de la lune."
+    "en": "Bresser 7002580 station: Wunderground API or local relay (full data), plus a moon phase widget",
+    "fr": "Station Bresser 7002580 : API Wunderground ou relais local (donnees completes), widget phases lune"
   },
   "version": "1.0.4",
   "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.4",
@@ -23,7 +23,7 @@
         "node",
         "src/receiver.js"
       ],
-      "start": "auto",
+      "start": "manual",
       "read_only": true,
       "memory_mb": 128,
       "cpu": 0.3,
@@ -62,13 +62,84 @@
       "key": "setup_info",
       "type": "section",
       "label": {
-        "en": "Connect your weather station",
-        "fr": "Connectez votre station meteo"
+        "en": "Choose how to get your station data",
+        "fr": "Choisissez comment recuperer les donnees de la station"
       },
       "description": {
-        "en": "Set up the network relay (see relay/ in the repository) and send a copy of the station uploads to http://{{gladys_host}}:{{port:wunderground}}/weatherstation/updateweatherstation.php",
-        "fr": "Installez le relais reseau (dossier relay/ du depot) et envoyez une copie des envois de la station vers http://{{gladys_host}}:{{port:wunderground}}/weatherstation/updateweatherstation.php"
+        "en": "Wunderground API: nothing to install, outdoor data only (no indoor values). Local relay: complete data (including indoor temperature and humidity) but needs a small relay on your network (see the integration docs). If you pick the relay, send a copy of the station uploads to http://{{gladys_host}}:{{port:wunderground}}/weatherstation/updateweatherstation.php",
+        "fr": "API Wunderground : rien a installer, donnees exterieures uniquement (pas de mesures interieures). Relais local : donnees completes (dont temperature et humidite interieures) mais un petit relais est necessaire sur votre reseau (voir la documentation). Si vous choisissez le relais, envoyez une copie des envois de la station vers http://{{gladys_host}}:{{port:wunderground}}/weatherstation/updateweatherstation.php"
+      },
+      "links": [
+        {
+          "url": "https://github.com/Gaetanb76/gladys-bresser-weather-station#readme",
+          "label": {
+            "en": "Documentation and relay setup",
+            "fr": "Documentation et installation du relais"
+          }
+        }
+      ]
+    },
+    {
+      "key": "mode",
+      "type": "select",
+      "display": "radio",
+      "label": {
+        "en": "Data source",
+        "fr": "Source des donnees"
+      },
+      "default": "wunderground_api",
+      "options": [
+        {
+          "value": "wunderground_api",
+          "label": {
+            "en": "Wunderground API (simple, no indoor values)",
+            "fr": "API Wunderground (simple, sans mesures interieures)"
+          }
+        },
+        {
+          "value": "relay",
+          "label": {
+            "en": "Local relay (complete, needs a relay)",
+            "fr": "Relais local (complet, necessite un relais)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "wu_station_id",
+      "type": "string",
+      "label": {
+        "en": "Wunderground station ID (API mode)",
+        "fr": "Identifiant de station Wunderground (mode API)"
+      },
+      "placeholder": {
+        "en": "e.g. ISAINT1234",
+        "fr": "ex. ISAINT1234"
       }
+    },
+    {
+      "key": "wu_api_key",
+      "type": "secret",
+      "label": {
+        "en": "Wunderground API key (API mode)",
+        "fr": "Cle API Wunderground (mode API)"
+      },
+      "description": {
+        "en": "Free: wunderground.com > Member Settings > API Keys.",
+        "fr": "Gratuite : wunderground.com > Member Settings > API Keys."
+      }
+    },
+    {
+      "key": "poll_minutes",
+      "type": "number",
+      "label": {
+        "en": "Update interval in minutes (API mode)",
+        "fr": "Intervalle de mise a jour en minutes (mode API)"
+      },
+      "default": 5,
+      "min": 2,
+      "max": 60
     }
-  ]
+  ],
+  "cover_image": "https://raw.githubusercontent.com/Gaetanb76/gladys-bresser-weather-station/main/cover.jpg"
 }

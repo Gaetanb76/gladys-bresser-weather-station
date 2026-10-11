@@ -1,0 +1,37 @@
+# nginx relay for the Raspberry Pi (/etc/nginx/conf.d/bresser-relay.conf)
+#
+# The station believes it talks to rtupdate.wunderground.com (dnsmasq points
+# that name at this Pi). nginx:
+#   1. forwards the upload to the REAL Weather Underground (so your WU
+#      station page keeps working), and
+#   2. mirrors a copy to the Gladys integration's receiver port.
+#
+# Replace GLADYS_IP and GLADYS_PORT (shown in Gladys > Integration >
+# Configuration, "Connect your weather station").
+# Access log is OFF on purpose: the URL contains your Wunderground key.
+
+resolver 1.1.1.1 9.9.9.9 valid=300s;   # NOT the Pi itself (would loop)
+
+server {
+    listen 80;
+    server_name rtupdate.wunderground.com weatherstation.wunderground.com;
+    access_log off;
+
+    location /weatherstation/ {
+        mirror /_gladys;
+        mirror_request_body off;
+        set $wu_host rtupdate.wunderground.com;
+        proxy_pass http://$wu_host$request_uri;
+        proxy_set_header Host $wu_host;
+        proxy_connect_timeout 5s;
+    }
+
+    location = /_gladys {
+        internal;
+        # the mirrored request keeps the original query string
+        proxy_pass http://${LAN_IP}:${GLADYS_PORT}$request_uri;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_connect_timeout 2s;
+    }
+}

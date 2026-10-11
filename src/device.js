@@ -33,9 +33,15 @@ export function buildFeatureDefinitions(C, T, U) {
   ];
 }
 
-export function buildDiscoveredDevice(gladys, C, T, U) {
+export const INDOOR_KEYS = ["temp_in", "hum_in"];
+
+// indoor=false (Wunderground API mode): the API never returns the console's
+// indoor sensor, so those two features are not offered.
+export function buildDiscoveredDevice(gladys, C, T, U, { indoor = true } = {}) {
   const ids = gladys.externalIds(DEVICE_TYPE, STATION_PLATFORM_ID);
-  const features = buildFeatureDefinitions(C, T, U).map((def) => ({
+  const features = buildFeatureDefinitions(C, T, U)
+    .filter((def) => indoor || !INDOOR_KEYS.includes(def.key))
+    .map((def) => ({
     name: def.name,
     external_id: ids.feature(def.key),
     category: def.category,

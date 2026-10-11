@@ -1,0 +1,25 @@
+# Relay running on the machine that hosts Gladys (instead of a Raspberry Pi).
+# Untested on your network: read relay/README.md first.
+#
+#   cp .env.example .env     # then edit the three values
+#   docker compose up -d --build
+#
+# Both services use the host network because the station must reach ports
+# 53 (DNS) and 80 (HTTP) of this machine.
+services:
+  dns:
+    build: ./dnsmasq
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      LAN_IP: ${LAN_IP}
+    cap_add: [NET_ADMIN]
+  relay:
+    image: nginx:1.27-alpine
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      LAN_IP: ${LAN_IP}
+      GLADYS_PORT: ${GLADYS_PORT}
+    volumes:
+      - ./bresser-relay.conf.template:/etc/nginx/templates/bresser-relay.conf.template:ro

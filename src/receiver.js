@@ -1,4 +1,4 @@
-// Companion container entrypoint ("wunderground-receiver" in the manifest).
+// Companion container entrypoint ("wu-receiver" in the manifest).
 //
 // Receives the Weather Underground upload that the Bresser console sends
 // (relayed to this container's published port by the network relay - see
