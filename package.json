@@ -1,6 +1,6 @@
 {
   "name": "gladys-bresser-weather-station",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Gladys Assistant external integration for the Bresser 5-in-1 WiFi weather station (Ecowitt protocol), with a moon phase widget.",
   "type": "module",
   "private": true,
