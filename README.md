@@ -5,7 +5,7 @@ External integration for **Gladys Assistant** for the Bresser 7002580 WiFi colou
 ```
 Bresser console --HTTP GET (Weather Underground protocol)--> Pi (dnsmasq + nginx)
                                                               |-> real Weather Underground
-                                                              '-> companion container "wunderground-receiver" (src/receiver.js)
+                                                              '-> companion container "wu-receiver" (src/receiver.js)
                                                                     -> Gladys (SDK publishStates)
 ```
 

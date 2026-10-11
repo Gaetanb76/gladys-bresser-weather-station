@@ -4,7 +4,7 @@
   "name": "Bresser Weather Station",
   "description": {
     "en": "Bresser 7002580 WiFi station (outdoor, indoor, wind, rain, pressure) via the Wunderground protocol,",
-    "fr": "Station Bresser 7002580 WiFi (ext., int., vent, pluie, pression) via le protocole Wunderground, avec widget lune."
+    "fr": "Station Bresser 7002580 WiFi (ext., int., vent, pluie, pression) et widget phases de la lune."
   },
   "version": "1.0.3",
   "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.3",
@@ -17,7 +17,7 @@
   ],
   "containers": [
     {
-      "name": "wunderground-receiver",
+      "name": "wu-receiver",
       "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.0.3",
       "command": [
         "node",
