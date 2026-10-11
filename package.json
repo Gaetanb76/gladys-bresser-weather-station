@@ -11,7 +11,7 @@
     "receiver": "node src/receiver.js"
   },
   "dependencies": {
-    "@gladysassistant/integration-sdk": "^0.12.0"
+    "@gladysassistant/integration-sdk": "^0.14.0"
   },
   "engines": {
     "node": ">=20"

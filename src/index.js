@@ -50,7 +50,10 @@ gladys.onScanRequest(async () => {
 gladys.onWidgetGet("moon_phase", async () => {
   const now = new Date();
   const { illuminationPercent, phaseName } = getMoonPhase(now);
-  const series = buildIlluminationSeries(now);
+  const points = buildIlluminationSeries(now).map(({ x, y }) => ({
+    t: new Date(now.getTime() + x * 86_400_000).toISOString(),
+    v: y,
+  }));
 
   return {
     ttl_seconds: 3600,
@@ -62,7 +65,7 @@ gladys.onWidgetGet("moon_phase", async () => {
         chart_type: "area",
         unit: "%",
         now_marker: true,
-        series: [{ label: { en: "Illumination", fr: "Illumination" }, points: series }],
+        series: [{ name: { en: "Illumination", fr: "Illumination" }, points }],
       },
       {
         type: "text",
