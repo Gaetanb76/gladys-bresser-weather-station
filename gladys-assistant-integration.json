@@ -6,8 +6,8 @@
     "en": "Bresser 7002580 station: Wunderground API or local relay (full data), plus a moon phase widget",
     "fr": "Station Bresser 7002580 : API Wunderground ou relais local (donnees completes), widget phases lune"
   },
-  "version": "1.1.2",
-  "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.1.2",
+  "version": "1.1.3",
+  "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.1.3",
   "gladys_version": ">=5.1.0",
   "categories": [
     "environment"
@@ -18,7 +18,7 @@
   "containers": [
     {
       "name": "wu-receiver",
-      "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.1.2",
+      "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.1.3",
       "command": [
         "node",
         "src/receiver.js"
