@@ -1,18 +1,14 @@
 // HTTP endpoint that receives the Wunderground-protocol upload.
-// Kept free of any Gladys dependency so it can be tested on its own.
+// Free of any Gladys dependency so it can be tested on its own.
 
 import http from "node:http";
 import { parseWundergroundQuery } from "./wunderground.js";
-import { createChangePublisher } from "./publisher.js";
 
 /**
- * @param {{ ids: { feature(key: string): string },
- *           publishStates(states: object[]): Promise<unknown>,
+ * @param {{ onReadings(readings: Record<string, number>): Promise<void>|void,
  *           logger?: { debug(...a: unknown[]): void, error(...a: unknown[]): void } }} deps
  */
-export function createReceiver({ ids, publishStates, logger = console }) {
-  const publisher = createChangePublisher({ ids, publishStates });
-
+export function createReceiver({ onReadings, logger = console }) {
   return http.createServer(async (req, res) => {
     // The URL is never logged: it carries the Wunderground station key.
     const url = new URL(req.url, "http://localhost");
@@ -26,12 +22,11 @@ export function createReceiver({ ids, publishStates, logger = console }) {
       return;
     }
     try {
-      const count = await publisher.publish(readings);
-      if (count > 0) logger.debug(`Published ${count} changed state(s)`);
+      await onReadings(readings);
       // What Weather Underground itself answers to a successful upload.
       res.writeHead(200, { "Content-Type": "text/plain" }).end("success\n");
     } catch (err) {
-      logger.error("Failed to publish states", err);
+      logger.error("Failed to store readings:", err.message);
       res.writeHead(500).end("error\n");
     }
   });

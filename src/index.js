@@ -7,15 +7,18 @@
 //    indoor values.
 //  - "relay": the "wu-receiver" companion container (declared in the
 //    manifest) receives the station's own upload, relayed on the local
-//    network (see relay/). It gets this container's Gladys credentials via
-//    env so it can publish states over its own SDK connection. Companion
-//    containers are the only ones that get a host-published port.
+//    network (see relay/), and writes it to a shared folder that this
+//    process reads and publishes. Sub-containers get no Gladys credentials
+//    but are the only ones with a host-published port.
 
+import fs from "node:fs/promises";
+import path from "node:path";
 import { GladysIntegration, DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_TYPES, DEVICE_FEATURE_UNITS, logger } from "@gladysassistant/integration-sdk";
 import { buildDiscoveredDevice, DEVICE_TYPE, STATION_PLATFORM_ID } from "./device.js";
 import { getMoonPhase, buildIlluminationSeries } from "./moon.js";
 import { fetchObservation } from "./wuapi.js";
 import { createChangePublisher } from "./publisher.js";
+import { RECEIVER_NAME, MAIN_SHARED_DIR, LATEST_FILE } from "./shared.js";
 
 const gladys = new GladysIntegration();
 const ids = gladys.externalIds(DEVICE_TYPE, STATION_PLATFORM_ID);
@@ -109,26 +112,46 @@ function startPolling(settings) {
 }
 
 // --- Mode: relay (companion container) ----------------------------------
+// The "wu-receiver" sub-container writes the latest readings to a shared
+// folder (see shared.js); this process reads and publishes them.
 
-async function startReceiver() {
+let fileTimer = null;
+let lastSeen = "";
+
+async function readSharedOnce() {
   try {
-    await gladys.startContainer("wu-receiver", {
-      env: {
-        GLADYS_HOST_API_URL: process.env.GLADYS_HOST_API_URL,
-        GLADYS_INTEGRATION_TOKEN: process.env.GLADYS_INTEGRATION_TOKEN,
-        GLADYS_INTEGRATION_SELECTOR: process.env.GLADYS_INTEGRATION_SELECTOR,
-        TZ: process.env.TZ,
-      },
-    });
-    logger.info("wu-receiver container started");
+    const raw = await fs.readFile(path.join(MAIN_SHARED_DIR, LATEST_FILE), "utf8");
+    const { updated, readings } = JSON.parse(raw);
+    if (updated === lastSeen) return;
+    const count = await publisher.publish(readings ?? {});
+    lastSeen = updated;
+    logger.debug(`Relay: ${count} changed value(s) published`);
   } catch (err) {
-    logger.error("Could not start wu-receiver container", err);
+    if (err.code !== "ENOENT") logger.error(`Could not read the receiver's data: ${err.message}`);
   }
 }
 
-async function stopReceiver() {
+function stopFileWatch() {
+  if (fileTimer) clearInterval(fileTimer);
+  fileTimer = null;
+}
+
+async function startReceiver() {
   try {
-    await gladys.stopContainer("wu-receiver");
+    await gladys.startContainer(RECEIVER_NAME);
+    logger.info("wu-receiver container started");
+  } catch (err) {
+    logger.error(`Could not start wu-receiver container: ${err.message}`);
+  }
+  stopFileWatch();
+  fileTimer = setInterval(readSharedOnce, 5000);
+  readSharedOnce();
+}
+
+async function stopReceiver() {
+  stopFileWatch();
+  try {
+    await gladys.stopContainer(RECEIVER_NAME);
   } catch {
     // not created yet / already stopped: nothing to do
   }
@@ -151,7 +174,10 @@ gladys.onConfigUpdated(async (config) => {
   await applySettings(config);
 });
 
-gladys.handleShutdown(() => stopPolling());
+gladys.handleShutdown(() => {
+  stopPolling();
+  stopFileWatch();
+});
 
 await gladys.connect();
 await applySettings(await gladys.getConfig());

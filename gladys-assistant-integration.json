@@ -38,6 +38,9 @@
           },
           "browsable": false
         }
+      ],
+      "volumes": [
+        "/shared"
       ]
     }
   ],
