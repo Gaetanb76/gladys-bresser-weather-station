@@ -45,6 +45,12 @@ La station croit parler à Weather Underground. Un relais répond à sa place, t
 3. Dans votre routeur, indiquez la machine du relais comme serveur DNS. La Livebox ne permet pas de changer son DNS : utilisez un second routeur en mode routeur derrière elle (ex. TP-Link Deco) ou réglez le DNS appareil par appareil.
 4. Dans l'onglet **Découverte**, créez l'appareil « Station météo Bresser ».
 
+## Widget phase de lune
+
+Le widget affiche une image de la lune du jour, le nom de la phase, l'illumination et les dates des prochaines pleine et nouvelle lune. Tout est calculé localement.
+
+La lune est dessinée telle qu'on la voit depuis votre maison Gladys : éclairée à droite quand elle croît dans l'hémisphère nord, à l'envers dans l'hémisphère sud. Pour cela, l'intégration demande à Gladys la latitude de la maison (autorisation « localisation » affichée à l'installation) ; les coordonnées ne sont ni enregistrées ni affichées. Si Gladys contient plusieurs maisons, indiquez dans **Maison Gladys pour le widget lune** le nom de celle à utiliser ; laissez vide pour la première maison localisée. Sans maison localisée, la lune est dessinée comme vue de l'hémisphère nord.
+
 ## Dépannage
 
 - Pas de données en mode A : vérifiez l'identifiant de station et la clé API, et que votre station est en ligne sur wunderground.com. Le journal indique « refused the API key » si la clé est fausse.

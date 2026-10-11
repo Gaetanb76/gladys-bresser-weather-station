@@ -38,20 +38,17 @@ function phaseName(phase) {
 }
 
 /**
- * Builds the data points for the 30-day illumination chart shown in the
- * moon phase widget: a few days in the past, today, and the weeks ahead.
+ * Dates of the next new moon and full moon (mean cycle, same accuracy as
+ * getMoonPhase: within about half a day).
  *
- * @param {Date} today
- * @param {number} daysBefore
- * @param {number} daysAfter
- * @returns {{ x: number, y: number }[]} x = day offset from today, y = illumination %
+ * @param {Date} date
+ * @returns {{ nextNewMoon: Date, nextFullMoon: Date }}
  */
-export function buildIlluminationSeries(today = new Date(), daysBefore = 3, daysAfter = 26) {
-  const points = [];
-  for (let offset = -daysBefore; offset <= daysAfter; offset += 1) {
-    const d = new Date(today.getTime() + offset * MS_PER_DAY);
-    const { illuminationPercent } = getMoonPhase(d);
-    points.push({ x: offset, y: illuminationPercent });
-  }
-  return points;
+export function getNextMoonEvents(date = new Date()) {
+  const { phase } = getMoonPhase(date);
+  const daysUntil = (target) => (((target - phase) % 1) + 1) % 1 * SYNODIC_MONTH_DAYS || SYNODIC_MONTH_DAYS;
+  return {
+    nextNewMoon: new Date(date.getTime() + daysUntil(0) * MS_PER_DAY),
+    nextFullMoon: new Date(date.getTime() + daysUntil(0.5) * MS_PER_DAY),
+  };
 }

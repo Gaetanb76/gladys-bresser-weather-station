@@ -15,7 +15,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { GladysIntegration, DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_TYPES, DEVICE_FEATURE_UNITS, logger } from "@gladysassistant/integration-sdk";
 import { buildDiscoveredDevice, DEVICE_TYPE, STATION_PLATFORM_ID } from "./device.js";
-import { getMoonPhase, buildIlluminationSeries } from "./moon.js";
+import { getMoonPhase, getNextMoonEvents } from "./moon.js";
+import { renderMoonPng } from "./moonImage.js";
+import { createHouseLookup } from "./house.js";
 import { fetchObservation } from "./wuapi.js";
 import { createChangePublisher } from "./publisher.js";
 import { RECEIVER_NAME, MAIN_SHARED_DIR, LATEST_FILE } from "./shared.js";
@@ -23,10 +25,11 @@ import { RECEIVER_NAME, MAIN_SHARED_DIR, LATEST_FILE } from "./shared.js";
 const gladys = new GladysIntegration();
 const ids = gladys.externalIds(DEVICE_TYPE, STATION_PLATFORM_ID);
 const publisher = createChangePublisher({ ids, publishStates: (states) => gladys.publishStates(states) });
+const houses = createHouseLookup(gladys);
 
 const MODE_RELAY = "relay";
 let pollTimer = null;
-let currentSettings = { mode: "wunderground_api" };
+let currentSettings = { mode: "wunderground_api", houseName: "" };
 
 function readSettings(config) {
   const minutes = Number(config.poll_minutes);
@@ -35,6 +38,7 @@ function readSettings(config) {
     stationId: String(config.wu_station_id ?? "").trim(),
     apiKey: String(config.wu_api_key ?? "").trim(),
     pollMinutes: Number.isFinite(minutes) ? Math.min(60, Math.max(2, minutes)) : 5,
+    houseName: String(config.house_name ?? "").trim(),
   };
 }
 
@@ -50,36 +54,56 @@ gladys.onScanRequest(async () => {
 // --- Moon phase widget ---------------------------------------------------
 // Pure calendar astronomy: no dependency on the weather station at all.
 
-gladys.onWidgetGet("moon_phase", async () => {
-  const now = new Date();
-  const { illuminationPercent, phaseName } = getMoonPhase(now);
-  const points = buildIlluminationSeries(now).map(({ x, y }) => ({
-    t: new Date(now.getTime() + x * 86_400_000).toISOString(),
-    v: y,
-  }));
+// The picture is quantized to MOON_IMAGE_STEPS images per cycle (about one
+// every 3.5 hours): the core caches an image one hour by key, so the key
+// carries the step and changes when the picture does.
+// The hemisphere (n/s) is part of the key too: it mirrors the picture.
+const MOON_IMAGE_STEPS = 200;
+const MOON_IMAGE_KEY = /^moon-([ns])-(\d{1,3})$/;
+const moonImageCache = new Map();
 
+gladys.onWidgetGet("moon_phase", async ({ language } = {}) => {
+  const now = new Date();
+  const { phase, illuminationPercent, phaseName } = getMoonPhase(now);
+  const { nextNewMoon, nextFullMoon } = getNextMoonEvents(now);
+  const step = Math.round(phase * MOON_IMAGE_STEPS) % MOON_IMAGE_STEPS;
+  const { house, count } = await houses.get(currentSettings.houseName);
+  const hemisphere = house && house.latitude < 0 ? "s" : "n";
+  const lang = language === "fr" ? "fr" : "en";
+  const formatDate = (d) =>
+    d.toLocaleDateString(lang === "fr" ? "fr-FR" : "en-GB", { weekday: "short", day: "numeric", month: "long" });
+
+  // Canonical card order: header text, then the picture (focal), then the
+  // status rows - so the phase name sits right under the moon.
   return {
     ttl_seconds: 3600,
     components: [
       { type: "text", variant: "caption", text: { en: "Moon phase", fr: "Phase de la lune" } },
-      { type: "value", value: illuminationPercent, unit: "%", label: phaseName, icon: "moon", color: "info" },
+      { type: "image", key: `moon-${hemisphere}-${step}`, fit: "contain", alt: phaseName },
       {
-        type: "chart",
-        chart_type: "area",
-        unit: "%",
-        now_marker: true,
-        series: [{ name: { en: "Illumination", fr: "Illumination" }, points }],
-      },
-      {
-        type: "text",
-        variant: "caption",
-        text: {
-          en: `Today: ${phaseName.en} (${illuminationPercent}% illuminated)`,
-          fr: `Aujourd'hui : ${phaseName.fr} (${illuminationPercent}% d'illumination)`,
-        },
+        type: "status",
+        items: [
+          { label: { en: "Phase", fr: "Phase" }, value: phaseName[lang], icon: "moon", color: "info" },
+          { label: { en: "Illumination", fr: "Illumination" }, value: `${illuminationPercent} %`, color: "neutral" },
+          { label: { en: "Next full moon", fr: "Prochaine pleine lune" }, value: formatDate(nextFullMoon), color: "neutral" },
+          { label: { en: "Next new moon", fr: "Prochaine nouvelle lune" }, value: formatDate(nextNewMoon), color: "neutral" },
+          // With several houses, say which one the moon is seen from (its name, never its coordinates).
+          ...(count > 1 ? [{ label: { en: "House", fr: "Maison" }, value: house.name, icon: "home", color: "neutral" }] : []),
+        ],
       },
     ],
   };
+});
+
+gladys.onWidgetGetImage(async (imageKey) => {
+  const match = MOON_IMAGE_KEY.exec(imageKey);
+  if (!match) throw new Error(`Unknown widget image: ${imageKey}`);
+  if (!moonImageCache.has(imageKey)) {
+    if (moonImageCache.size >= 8) moonImageCache.delete(moonImageCache.keys().next().value);
+    const png = renderMoonPng(Number(match[2]) / MOON_IMAGE_STEPS, { southern: match[1] === "s" });
+    moonImageCache.set(imageKey, png.toString("base64"));
+  }
+  return moonImageCache.get(imageKey);
 });
 
 // --- Mode: Wunderground API polling -------------------------------------
@@ -172,6 +196,9 @@ async function applySettings(config) {
 
 gladys.onConfigUpdated(async (config) => {
   await applySettings(config);
+  // the house may have changed (or just been located): redraw the moon
+  houses.invalidate();
+  gladys.requestWidgetRefresh("moon_phase");
 });
 
 gladys.handleShutdown(() => {

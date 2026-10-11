@@ -45,6 +45,12 @@ The station believes it talks to Weather Underground. A relay answers in its pla
 3. In your router, set the relay machine as DNS server. The Livebox cannot change its DNS: use a second router in router mode behind it (e.g. TP-Link Deco) or set the DNS on each device.
 4. Open the **Discovery** tab and create the "Bresser Weather Station" device.
 
+## Moon phase widget
+
+The widget shows a picture of today's moon, the phase name, the illumination and the dates of the next full and new moon. Everything is computed locally.
+
+The moon is drawn as seen from your Gladys house: lit on the right while waxing in the northern hemisphere, upside down in the southern hemisphere. For this the integration asks Gladys for the house latitude ("location" authorization shown at install); the coordinates are neither stored nor displayed. If Gladys holds several houses, enter the one to use in **Gladys house for the moon widget**; leave it empty for the first located house. Without a located house, the moon is drawn as seen from the northern hemisphere.
+
 ## Troubleshooting
 
 - No data in mode A: check the station ID and API key, and that your station is online on wunderground.com. The log says "refused the API key" for a wrong key.

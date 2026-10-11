@@ -9,6 +9,7 @@
   "version": "1.1.4",
   "docker_image": "ghcr.io/gaetanb76/gladys-bresser-weather-station:1.1.4",
   "gladys_version": ">=5.1.0",
+  "location": true,
   "categories": [
     "environment"
   ],
@@ -52,8 +53,8 @@
         "fr": "Phase de la lune"
       },
       "description": {
-        "en": "Current moon phase, illumination, and a 30-day illumination chart.",
-        "fr": "Phase de la lune actuelle, illumination, et un graphique sur 30 jours."
+        "en": "Picture of the current moon phase, illumination, and the next full and new moon.",
+        "fr": "Image de la phase de la lune actuelle, illumination, prochaines pleine et nouvelle lune."
       },
       "icon": "moon",
       "settings": [],
@@ -142,6 +143,23 @@
       "default": 5,
       "min": 2,
       "max": 60
+    },
+    {
+      "key": "house_name",
+      "type": "string",
+      "label": {
+        "en": "Gladys house for the moon widget",
+        "fr": "Maison Gladys pour le widget lune"
+      },
+      "description": {
+        "en": "Name of the Gladys house the moon is seen from: its latitude decides whether the moon is drawn as seen from the northern or southern hemisphere. Leave it empty to use the first house that has a location. The coordinates stay in the integration and are shown nowhere.",
+        "fr": "Nom de la maison Gladys depuis laquelle la lune est vue : sa latitude décide si la lune est dessinée comme vue de l'hémisphère nord ou sud. Laissez vide pour utiliser la première maison localisée. Les coordonnées restent dans l'intégration et ne sont affichées nulle part."
+      },
+      "required": false,
+      "placeholder": {
+        "en": "Home",
+        "fr": "Maison"
+      }
     }
   ],
   "cover_image": "https://raw.githubusercontent.com/Gaetanb76/gladys-bresser-weather-station/main/cover.jpg"
