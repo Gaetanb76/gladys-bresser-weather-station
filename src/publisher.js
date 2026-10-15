@@ -8,11 +8,11 @@ export function createChangePublisher({ ids, publishStates }) {
       for (const [key, value] of Object.entries(readings)) {
         const id = ids.feature(key);
         if (last.get(id) === value) continue;
-        states.push({ device_feature_external_id: id, state: value });
+        states.push(typeof value === "string" ? { device_feature_external_id: id, text: value } : { device_feature_external_id: id, state: value });
       }
       if (states.length === 0) return 0;
       await publishStates(states);
-      for (const s of states) last.set(s.device_feature_external_id, s.state); // remember only after success
+      for (const s of states) last.set(s.device_feature_external_id, s.text ?? s.state); // remember only after success
       return states.length;
     },
   };

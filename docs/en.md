@@ -15,7 +15,7 @@ The console cannot send its data to a server of your choice: it only uploads to 
 | Update delay | about 5 min (adjustable, minimum 2) | about 12 s |
 | Outdoor temperature, humidity, dew point | yes | yes |
 | Pressure | yes | yes |
-| Wind speed, gust, direction | yes | yes |
+| Wind speed, gust, direction (degrees and N, NE, E… in French initials) | yes | yes |
 | Rain (last hour, daily total) | yes | yes |
 | **Indoor temperature and humidity** | **no** | **yes** |
 | Battery level of the outdoor sensor | no | no |
@@ -53,6 +53,7 @@ The moon is drawn as seen from your Gladys house: lit on the right while waxing 
 
 ## Troubleshooting
 
+- After an integration update, a feature is missing or has no icon: open the **Discovery** tab and click **Update** on the station.
 - No data in mode A: check the station ID and API key, and that your station is online on wunderground.com. The log says "refused the API key" for a wrong key.
 - No data in mode B: test the relay with the `curl` command of `relay/README.md`.
 - Pressure is the value the station sends, converted from inHg to hPa.

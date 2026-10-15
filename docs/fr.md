@@ -15,7 +15,7 @@ La console ne sait pas envoyer ses données vers un serveur de votre choix : ell
 | Délai de mise à jour | environ 5 min (réglable, minimum 2) | environ 12 s |
 | Température, humidité extérieures, point de rosée | oui | oui |
 | Pression | oui | oui |
-| Vent : vitesse, rafales, direction | oui | oui |
+| Vent : vitesse, rafales, direction (degrés et N, NE, E…) | oui | oui |
 | Pluie (dernière heure, cumul du jour) | oui | oui |
 | **Température et humidité intérieures** | **non** | **oui** |
 | Niveau de pile du capteur extérieur | non | non |
@@ -53,6 +53,7 @@ La lune est dessinée telle qu'on la voit depuis votre maison Gladys : éclairé
 
 ## Dépannage
 
+- Après une mise à jour de l'intégration, une caractéristique manque ou n'a pas d'icône : ouvrez l'onglet **Découverte** et cliquez sur **Mettre à jour** sur la station.
 - Pas de données en mode A : vérifiez l'identifiant de station et la clé API, et que votre station est en ligne sur wunderground.com. Le journal indique « refused the API key » si la clé est fausse.
 - Pas de données en mode B : testez le relais avec la commande `curl` de `relay/README.md`.
 - La pression est la valeur envoyée par la station, convertie de inHg en hPa.

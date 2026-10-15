@@ -14,7 +14,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { GladysIntegration, DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_TYPES, DEVICE_FEATURE_UNITS, logger } from "@gladysassistant/integration-sdk";
-import { buildDiscoveredDevice, DEVICE_TYPE, STATION_PLATFORM_ID } from "./device.js";
+import { buildDiscoveredDevice, withDerivedReadings, DEVICE_TYPE, STATION_PLATFORM_ID } from "./device.js";
 import { getMoonPhase, getNextMoonEvents } from "./moon.js";
 import { renderMoonPng } from "./moonImage.js";
 import { createHouseLookup } from "./house.js";
@@ -111,7 +111,7 @@ gladys.onWidgetGetImage(async (imageKey) => {
 async function pollOnce(settings) {
   try {
     const readings = await fetchObservation(settings.stationId, settings.apiKey);
-    const count = await publisher.publish(readings);
+    const count = await publisher.publish(withDerivedReadings(readings));
     logger.debug(`Wunderground API: ${Object.keys(readings).length} value(s), ${count} changed`);
   } catch (err) {
     // err.message never contains the API key (see wuapi.js)
@@ -147,7 +147,7 @@ async function readSharedOnce() {
     const raw = await fs.readFile(path.join(MAIN_SHARED_DIR, LATEST_FILE), "utf8");
     const { updated, readings } = JSON.parse(raw);
     if (updated === lastSeen) return;
-    const count = await publisher.publish(readings ?? {});
+    const count = await publisher.publish(withDerivedReadings(readings ?? {}));
     lastSeen = updated;
     logger.debug(`Relay: ${count} changed value(s) published`);
   } catch (err) {
